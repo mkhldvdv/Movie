@@ -10,15 +10,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class Movie {
 
     private String title;
     private String overview;
     @JsonProperty("vote_average")
     private Float voteAverage;
-    @JsonProperty("status_code")
-    private Integer statusCode;
 
     public String getTitle() {
         return title;
@@ -44,21 +41,12 @@ public class Movie {
         this.voteAverage = voteAverage;
     }
 
-    public Integer getStatusCode() {
-        return statusCode;
-    }
-
-    public void setStatusCode(Integer statusCode) {
-        this.statusCode = statusCode;
-    }
-
     @Override
     public String toString() {
         return "Movie{" +
                 "title='" + title + '\'' +
                 ", overview='" + overview + '\'' +
                 ", voteAverage=" + voteAverage +
-                ", statusCode=" + statusCode +
                 '}';
     }
 }

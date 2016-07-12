@@ -2,13 +2,18 @@ package movie;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessageCreator;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Session;
 import java.util.List;
 
 /**
@@ -16,9 +21,11 @@ import java.util.List;
  */
 
 @RestController
+@EnableJms
 public class MovieController {
 
-    public static final int SUCCESS = 1;
+    @Autowired
+    ConfigurableApplicationContext context;
 
     @Value("${themoviedb.accessUri}")
     private String accessUri;
@@ -26,26 +33,39 @@ public class MovieController {
     @Value("${themoviedb.apiKey}")
     private String apiKey;
 
-    @RequestMapping("/movie")
-    public List<Movie> getList() {
+    @RequestMapping("/genre/{id}")
+    public List<Movie> getList(@PathVariable Long id) {
+        if (id == null) {
+            throw new RuntimeException();
+        }
         RestTemplate restTemplate = new RestTemplate();
-        Movies movies = restTemplate.getForObject(accessUri + "/movie/popular?api_key=" + apiKey, Movies.class);
+        Movies movies = restTemplate.getForObject(accessUri + "/genre/" + id + "/movies?api_key=" + apiKey, Movies.class);
         return movies.getMovies();
     }
 
     @RequestMapping("/movie/{id}")
     public Movie getOne(@PathVariable Long id) {
+        if (id == null) {
+            throw new RuntimeException();
+        }
         RestTemplate restTemplate = new RestTemplate();
         Movie movie = restTemplate.getForObject(accessUri + "/movie/" + id + "?api_key=" + apiKey, Movie.class);
-        if (movie.getStatusCode() != SUCCESS) {
-            throw new NotFoundException();
-        }
         return movie;
     }
 
     @RequestMapping("/rating")
-    public Float getRating() {
-        return null;
+    public void getRating() {
+
+        // Send a message
+        MessageCreator messageCreator = new MessageCreator() {
+            @Override
+            public Message createMessage(Session session) throws JMSException {
+                return session.createTextMessage("ping!");
+            }
+        };
+        JmsTemplate jmsTemplate = context.getBean(JmsTemplate.class);
+        System.out.println("Sending a new message.");
+        jmsTemplate.send("rating-destination", messageCreator);
     }
 
     @RequestMapping("/url")
@@ -53,8 +73,8 @@ public class MovieController {
         return accessUri;
     }
 
-    @ExceptionHandler(NotFoundException.class)
-    public String error(NotFoundException e) {
-        return e.getMessage();
+    @ExceptionHandler(Exception.class)
+    public String error() {
+        return "No such movie found";
     }
 }
