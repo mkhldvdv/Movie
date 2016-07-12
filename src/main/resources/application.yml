@@ -1,0 +1,3 @@
+themoviedb:
+  apiKey: 72b56103e43843412a992a8d64bf96e9
+  accessUri: https://api.themoviedb.org

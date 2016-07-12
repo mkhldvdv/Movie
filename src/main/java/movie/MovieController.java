@@ -1,5 +1,8 @@
 package movie;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -10,7 +13,13 @@ import java.util.List;
  */
 
 @RestController
-public class VideoController {
+public class MovieController {
+
+    @Value("${themoviedb.accessUri}")
+    private String accessUri;
+
+    @Value("${themoviedb.apiKey}")
+    private String apiKey;
 
     @RequestMapping("/list")
     public List getList() {
@@ -26,4 +35,10 @@ public class VideoController {
     public Float getRating() {
         return null;
     }
+
+    @RequestMapping("/url")
+    public String getUrl() {
+        return accessUri;
+    }
+
 }
