@@ -14,7 +14,6 @@ import org.springframework.web.client.RestTemplate;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
-import java.util.List;
 
 /**
  * Created by mikhail.davydov on 2016/7/12.
@@ -34,7 +33,7 @@ public class MovieController {
     private String apiKey;
 
     @RequestMapping("/movie")
-    public List<Movie> getList(@RequestParam(required = false) Integer page) {
+    public Movies getList(@RequestParam(required = false) Integer page) {
         RestTemplate restTemplate = new RestTemplate();
         StringBuilder url = new StringBuilder()
                 .append(accessUri)
@@ -44,7 +43,7 @@ public class MovieController {
             url.append("&page=").append(page);
         }
         Movies movies = restTemplate.getForObject(url.toString(), Movies.class);
-        return movies.getMovies();
+        return movies;
     }
 
     @RequestMapping("/movie/{id}")

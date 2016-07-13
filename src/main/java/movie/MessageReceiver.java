@@ -21,17 +21,12 @@ public class MessageReceiver {
     @Value("${themoviedb.apiKey}")
     private String apiKey;
 
-    /**
-     * When you receive a message, print it out, then shut down the application.
-     * Finally, clean up any ActiveMQ server stuff.
-     */
     @JmsListener(destination = "rating-genre")
-    public Movies receiveMessage(Long id) {
+    public void receiveMessage(Long id) {
+        System.out.println("Message received: " + id);
 
         RestTemplate restTemplate = new RestTemplate();
         Movies movies = restTemplate.getForObject(accessUri + "/genre/" + id + "/movies?api_key=" + apiKey, Movies.class);
         FileSystemUtils.deleteRecursively(new File("activemq-data"));
-
-        return movies;
     }
 }
