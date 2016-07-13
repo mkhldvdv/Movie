@@ -1,7 +1,7 @@
 package movie;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -33,13 +33,17 @@ public class MovieController {
     @Value("${themoviedb.apiKey}")
     private String apiKey;
 
-    @RequestMapping("/genre/{id}")
-    public List<Movie> getList(@PathVariable Long id) {
-        if (id == null) {
-            throw new RuntimeException();
-        }
+    @RequestMapping("/movie")
+    public List<Movie> getList(@RequestParam(required = false) Integer page) {
         RestTemplate restTemplate = new RestTemplate();
-        Movies movies = restTemplate.getForObject(accessUri + "/genre/" + id + "/movies?api_key=" + apiKey, Movies.class);
+        StringBuilder url = new StringBuilder()
+                .append(accessUri)
+                .append("/movie/popular?api_key=")
+                .append(apiKey);
+        if (page != null && page > 1) {
+            url.append("&page=").append(page);
+        }
+        Movies movies = restTemplate.getForObject(url.toString(), Movies.class);
         return movies.getMovies();
     }
 
@@ -53,28 +57,31 @@ public class MovieController {
         return movie;
     }
 
-    @RequestMapping("/rating")
-    public void getRating() {
+    @RequestMapping("/rating/{genre}")
+    public ObjectNode getRating(@PathVariable Long genre) {
 
         // Send a message
         MessageCreator messageCreator = new MessageCreator() {
             @Override
             public Message createMessage(Session session) throws JMSException {
-                return session.createTextMessage("ping!");
+                return session.createObjectMessage(genre);
             }
         };
         JmsTemplate jmsTemplate = context.getBean(JmsTemplate.class);
         System.out.println("Sending a new message.");
-        jmsTemplate.send("rating-destination", messageCreator);
-    }
+        jmsTemplate.send("rating-genre", messageCreator);
 
-    @RequestMapping("/url")
-    public String getUrl() {
-        return accessUri;
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = mapper.createObjectNode();
+        node.put("status", "Proccess has been started");
+        return node;
     }
 
     @ExceptionHandler(Exception.class)
-    public String error() {
-        return "No such movie found";
+    public ObjectNode error() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = mapper.createObjectNode();
+        node.put("error", "No such element found");
+        return node;
     }
 }
