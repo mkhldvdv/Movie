@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
@@ -33,8 +34,7 @@ public class MovieController {
     private String apiKey;
 
     @RequestMapping("/movie")
-    public Movies getList(@RequestParam(required = false) Integer page) {
-        RestTemplate restTemplate = new RestTemplate();
+    public Movies getList(@RequestParam(name = "page", required = false) Integer page) {
         StringBuilder url = new StringBuilder()
                 .append(accessUri)
                 .append("/movie/popular?api_key=")
@@ -42,6 +42,7 @@ public class MovieController {
         if (page != null && page > 1) {
             url.append("&page=").append(page);
         }
+        RestTemplate restTemplate = new RestTemplate();
         Movies movies = restTemplate.getForObject(url.toString(), Movies.class);
         return movies;
     }
@@ -77,6 +78,7 @@ public class MovieController {
     }
 
     @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public ObjectNode error() {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();

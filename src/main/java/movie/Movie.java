@@ -10,12 +10,21 @@ import java.io.Serializable;
  */
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Movie implements Serializable{
+public class Movie implements Serializable {
 
+    private Long id;
     private String title;
     private String overview;
     @JsonProperty("vote_average")
     private Float voteAverage;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getTitle() {
         return title;
@@ -44,7 +53,8 @@ public class Movie implements Serializable{
     @Override
     public String toString() {
         return "Movie{" +
-                "title='" + title + '\'' +
+                "id='" + id + '\'' +
+                ", title='" + title + '\'' +
                 ", overview='" + overview + '\'' +
                 ", voteAverage=" + voteAverage +
                 '}';
