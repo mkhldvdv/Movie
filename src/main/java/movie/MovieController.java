@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
+import java.io.IOException;
 
 /**
  * Created by mikhail.davydov on 2016/7/12.
@@ -34,7 +35,7 @@ public class MovieController {
     private String apiKey;
 
     @RequestMapping("/movie")
-    public Movies getList(@RequestParam(name = "page", required = false) Integer page) {
+    public HttpEntity<Movies> getList(@RequestParam(name = "page", required = false) Integer page) {
         StringBuilder url = new StringBuilder()
                 .append(accessUri)
                 .append("/movie/popular?api_key=")
@@ -44,17 +45,18 @@ public class MovieController {
         }
         RestTemplate restTemplate = new RestTemplate();
         Movies movies = restTemplate.getForObject(url.toString(), Movies.class);
-        return movies;
+        return new HttpEntity<Movies>(movies);
     }
 
     @RequestMapping("/movie/{id}")
-    public Movie getOne(@PathVariable Long id) {
+    public HttpEntity<Movie> getOne(@PathVariable Long id) {
         if (id == null) {
             throw new RuntimeException();
         }
         RestTemplate restTemplate = new RestTemplate();
+
         Movie movie = restTemplate.getForObject(accessUri + "/movie/" + id + "?api_key=" + apiKey, Movie.class);
-        return movie;
+        return new HttpEntity<Movie>(movie);
     }
 
     @RequestMapping("/rating/{genre}")

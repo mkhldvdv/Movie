@@ -37,12 +37,13 @@ public class MovieTest {
         mvc = webAppContextSetup(webApplicationContext).build();
     }
 
+    // Get list
     @Test
     public void testGetList() throws Exception {
         // positive check: correct results
         mvc
                 .perform(MockMvcRequestBuilders.get("/movie")
-                .accept(MediaType.APPLICATION_JSON))
+                    .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("page").exists())
@@ -113,6 +114,17 @@ public class MovieTest {
     }
 
     @Test
+    public void testGetListXML() throws Exception {
+        // positive check: correct results
+        mvc
+                .perform(MockMvcRequestBuilders.get("/movie")
+                        .accept(MediaType.APPLICATION_XML))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    // Get one
+    @Test
     public void testGetOne() throws Exception {
         // positive check: correct results
         mvc
@@ -146,6 +158,17 @@ public class MovieTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    public void testGetOneXML() throws Exception {
+        // positive check: correct results
+        mvc
+                .perform(MockMvcRequestBuilders.get("/movie/550")
+                        .accept(MediaType.APPLICATION_XML))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    // Get rating
     @Test
     @Ignore("Not fully implemented yet")
     public void testGetRating() throws Exception {
