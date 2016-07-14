@@ -6,7 +6,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -14,6 +16,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
@@ -170,7 +173,6 @@ public class MovieTest {
 
     // Get rating
     @Test
-    @Ignore("Not fully implemented yet")
     public void testGetRating() throws Exception {
         // positive check: correct results
         mvc
@@ -179,13 +181,30 @@ public class MovieTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("status").exists())
-                .andExpect(jsonPath("status").value("Proccess has been started"));
+                .andExpect(jsonPath("status").value("request accepted"))
+                .andExpect(jsonPath("error").doesNotExist());
 
-//        mvc
-//                .perform(MockMvcRequestBuilders.get("/rating/28")
-//                        .accept(MediaType.APPLICATION_JSON))
-//                .andDo(print())
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("status").exists());
+        Thread.sleep(2000);
+
+        mvc
+                .perform(MockMvcRequestBuilders.get("/rating/28")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("status").exists())
+                .andExpect(jsonPath("status").value("request in progress"))
+                .andExpect(jsonPath("error").doesNotExist());
+
+        Thread.sleep(5000);
+
+        mvc
+                .perform(MockMvcRequestBuilders.get("/rating/28")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("status").exists())
+                .andExpect(jsonPath("status").value("request completed"))
+                .andExpect(jsonPath("error").doesNotExist());
     }
+
 }

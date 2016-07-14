@@ -1,14 +1,15 @@
 package movie;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.text.DecimalFormat;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by mikhail.davydov on 2016/7/12.
@@ -17,10 +18,11 @@ import java.util.Map;
 @Component
 public class MessageReceiver {
 
-    public static final int LIMIT = 5;
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     public static final int INIT_VALUE = 0;
     @Autowired
-    private Rating rate;
+    private Rate rate;
 
     @Value("${themoviedb.accessUri}")
     private String accessUri;
@@ -28,9 +30,12 @@ public class MessageReceiver {
     @Value("${themoviedb.apiKey}")
     private String apiKey;
 
-    @JmsListener(destination = "rating.in")
+    @Value("${themoviedb.pageLimit}")
+    private Integer pageLimit;
+
+    @JmsListener(destination = "rating")
     public void getRating(Long id) {
-        System.out.println("Message received: " + id);
+        log.info("Message received: " + id);
 
         StringBuilder url = new StringBuilder()
                 .append(accessUri)
@@ -38,9 +43,15 @@ public class MessageReceiver {
                 .append(id)
                 .append("/movies?api_key=").append(apiKey);
         RestTemplate restTemplate = new RestTemplate();
-        Movies movies = restTemplate.getForObject(url.toString(), Movies.class);
+        Movies movies;
+        try {
+            movies = restTemplate.getForObject(url.toString(), Movies.class);
+        } catch (RestClientException e) {
+            rate.getRatingErrors().put(id, e.getMessage());
+            return;
+        }
         int page = movies.getPage();
-        int totalPages = LIMIT;
+        int totalPages = pageLimit;
 //        int totalResults = movies.getTotalResults();
         int totalResults = INIT_VALUE;
         float rating = INIT_VALUE;
@@ -50,9 +61,15 @@ public class MessageReceiver {
             rating += movies.getMovies().stream().mapToDouble(Movie::getVoteAverage).sum();
             // beacuse of the request limit per second
             totalResults += movies.getMovies().stream().count();
+            //
             page++;
             url.append("&page=").append(page);
-            movies = restTemplate.getForObject(url.toString(), Movies.class);
+            try {
+                movies = restTemplate.getForObject(url.toString(), Movies.class);
+            } catch (RestClientException e) {
+                rate.getRatingErrors().put(id, e.getMessage());
+                return;
+            }
         }
         // add processed results
         rate.getRatingProccessed().put(id, Float.valueOf(new DecimalFormat("##,##").format(rating / totalResults)));

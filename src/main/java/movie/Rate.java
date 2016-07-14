@@ -10,18 +10,21 @@ import java.util.Map;
  */
 
 @Component
-public class RatingImpl implements Rating {
+public class Rate {
 
     private final Map<Long, Integer> ratingProccessing = new HashMap<>();
     private final Map<Long, Float> ratingProccessed = new HashMap<>();
+    private final Map<Long, String> ratingErrors = new HashMap<>();
 
-    @Override
     public Map<Long, Integer> getRatingProccessing() {
         return ratingProccessing;
     }
 
-    @Override
     public Map<Long, Float> getRatingProccessed() {
         return ratingProccessed;
+    }
+
+    public Map<Long, String> getRatingErrors() {
+        return ratingErrors;
     }
 }

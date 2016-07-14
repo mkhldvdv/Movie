@@ -2,6 +2,8 @@ package movie;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -9,13 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
-import org.springframework.util.ErrorHandler;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Session;
 
 /**
  * Created by mikhail.davydov on 2016/7/12.
@@ -25,11 +22,13 @@ import javax.jms.Session;
 @EnableJms
 public class MovieController {
 
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     @Autowired
     JmsTemplate jmsTemplate;
 
     @Autowired
-    Rating rate;
+    Rate rate;
 
     @Value("${themoviedb.accessUri}")
     private String accessUri;
@@ -48,7 +47,7 @@ public class MovieController {
         }
         RestTemplate restTemplate = new RestTemplate();
         Movies movies = restTemplate.getForObject(url.toString(), Movies.class);
-        return new HttpEntity<Movies>(movies);
+        return new HttpEntity<>(movies);
     }
 
     @RequestMapping("/movie/{id}")
@@ -59,7 +58,7 @@ public class MovieController {
         RestTemplate restTemplate = new RestTemplate();
 
         Movie movie = restTemplate.getForObject(accessUri + "/movie/" + id + "?api_key=" + apiKey, Movie.class);
-        return new HttpEntity<Movie>(movie);
+        return new HttpEntity<>(movie);
     }
 
     @RequestMapping("/rating/{id}")
@@ -69,30 +68,32 @@ public class MovieController {
 
         // check if rate exists
         if (rate.getRatingProccessed().get(id) != null) {
-            node.put("status", "Average rating: " + rate.getRatingProccessed().get(id));
+            node.put("status", "request completed");
+            node.put("message", "Average rating: " + rate.getRatingProccessed().get(id));
+            node.put("error", rate.getRatingErrors().get(id));
         } else if (rate.getRatingProccessing().get(id) != null) {
-            node.put("status", "Request is in progress: " + rate.getRatingProccessing().get(id) + "% done");
+            node.put("status", "request in progress");
+            node.put("message", "Request is in progress: " + rate.getRatingProccessing().get(id) + "% done");
+            node.put("error", rate.getRatingErrors().get(id));
         } else {
             // Send new request
-            MessageCreator messageCreator = new MessageCreator() {
-                @Override
-                public Message createMessage(Session session) throws JMSException {
-                    return session.createObjectMessage(id);
-                }
-            };
-            System.out.println("Sending a new message.");
-            jmsTemplate.send("rating.in", messageCreator);
-            node.put("status", "Proccess has been started");
+            MessageCreator messageCreator = session -> session.createObjectMessage(id);
+            log.info("Sending a new message: " + id);
+            jmsTemplate.send("rating", messageCreator);
+            node.put("status", "request accepted");
+            node.put("message", "Proccess has been started");
+            node.put("error", rate.getRatingErrors().get(id));
         }
         return node;
     }
 
-    @ExceptionHandler(Throwable.class)
+    @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ObjectNode error() {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();
-        node.put("error", "No such element found");
+        node.put("status", "error");
+        node.put("message", "No such element found");
         return node;
     }
 }
