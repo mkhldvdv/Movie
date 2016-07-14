@@ -172,6 +172,20 @@ public class MovieTest {
     @Test
     @Ignore("Not fully implemented yet")
     public void testGetRating() throws Exception {
+        // positive check: correct results
+        mvc
+                .perform(MockMvcRequestBuilders.get("/rating/28")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("status").exists())
+                .andExpect(jsonPath("status").value("Proccess has been started"));
 
+//        mvc
+//                .perform(MockMvcRequestBuilders.get("/rating/28")
+//                        .accept(MediaType.APPLICATION_JSON))
+//                .andDo(print())
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("status").exists());
     }
 }
