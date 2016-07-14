@@ -1,10 +1,12 @@
 package movie;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
@@ -32,12 +34,21 @@ public class MovieTest {
 
     private MockMvc mvc;
 
+    @Value("${movie.requestRate}")
+    private Integer requestRate;
+
     @Autowired
     private WebApplicationContext webApplicationContext;
 
     @Before
     public void setUp() throws Exception {
         mvc = webAppContextSetup(webApplicationContext).build();
+    }
+
+    @After
+    public void sleep() throws InterruptedException {
+        // to be sure rate cache was cleared
+        Thread.sleep(60000);
     }
 
     // Get list
@@ -167,6 +178,30 @@ public class MovieTest {
         mvc
                 .perform(MockMvcRequestBuilders.get("/movie/550")
                         .accept(MediaType.APPLICATION_XML))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testGetOneMultiple() throws Exception {
+        // positive check: correct results
+        for (int i = 0; i < requestRate; i++) {
+            mvc
+                    .perform(MockMvcRequestBuilders.get("/movie/550")
+                            .accept(MediaType.APPLICATION_JSON));
+        }
+
+        mvc
+                .perform(MockMvcRequestBuilders.get("/movie/550")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().is4xxClientError());
+
+        Thread.sleep(70000);
+
+        mvc
+                .perform(MockMvcRequestBuilders.get("/movie/550")
+                        .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk());
     }

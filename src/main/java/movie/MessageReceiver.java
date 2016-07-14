@@ -59,7 +59,7 @@ public class MessageReceiver {
         while (page < totalPages) {
             rate.getRatingProccessing().put(id, page * 100 / totalPages);
             rating += movies.getMovies().stream().mapToDouble(Movie::getVoteAverage).sum();
-            // beacuse of the request limit per second
+            // because of the request limit per second
             totalResults += movies.getMovies().stream().count();
             //
             page++;
