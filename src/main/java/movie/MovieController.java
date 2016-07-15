@@ -12,7 +12,12 @@ import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * Created by mikhail.davydov on 2016/7/12.
@@ -70,11 +75,9 @@ public class MovieController {
         if (rate.getRatingProccessed().get(id) != null) {
             node.put("status", "request completed");
             node.put("message", "Average rating: " + rate.getRatingProccessed().get(id));
-            node.put("error", rate.getRatingErrors().get(id));
         } else if (rate.getRatingProccessing().get(id) != null) {
             node.put("status", "request in progress");
             node.put("message", "Request is in progress: " + rate.getRatingProccessing().get(id) + "% done");
-            node.put("error", rate.getRatingErrors().get(id));
         } else {
             // Send new request
             MessageCreator messageCreator = session -> session.createObjectMessage(id);
@@ -82,18 +85,22 @@ public class MovieController {
             jmsTemplate.send("rating", messageCreator);
             node.put("status", "request accepted");
             node.put("message", "Proccess has been started");
-            node.put("error", rate.getRatingErrors().get(id));
         }
         return node;
     }
 
-    @ExceptionHandler(Exception.class)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ObjectNode error() {
+    public ObjectNode errorInputHandler(Exception e) {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();
         node.put("status", "error");
-        node.put("message", "No such element found");
+        node.put("message", e.getMessage());
         return node;
+    }
+
+    @ExceptionHandler(HttpClientErrorException.class)
+    public void errorHttpClientHandler(HttpServletResponse response, HttpClientErrorException e) throws IOException {
+        response.sendError(e.getStatusCode().value(), "Root cause received from original resource: " + e.getMessage());
     }
 }

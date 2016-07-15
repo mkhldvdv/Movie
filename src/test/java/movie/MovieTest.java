@@ -57,7 +57,7 @@ public class MovieTest {
         // positive check: correct results
         mvc
                 .perform(MockMvcRequestBuilders.get("/movie")
-                    .accept(MediaType.APPLICATION_JSON))
+                        .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("page").exists())
@@ -69,7 +69,10 @@ public class MovieTest {
                 .andExpect(jsonPath("total_results").isNumber())
                 .andExpect(jsonPath("total_pages").isNotEmpty())
                 .andExpect(jsonPath("total_pages").isNumber());
+    }
 
+    @Test
+    public void testGetList2Page() throws Exception {
         // positive check: correct results page 2
         mvc
                 .perform(MockMvcRequestBuilders.get("/movie?page=2")
@@ -85,7 +88,10 @@ public class MovieTest {
                 .andExpect(jsonPath("total_results").isNumber())
                 .andExpect(jsonPath("total_pages").isNotEmpty())
                 .andExpect(jsonPath("total_pages").isNumber());
+    }
 
+    @Test
+    public void testGetListPageNotExists() throws Exception {
         // positive check: correct results page does not exist
         mvc
                 .perform(MockMvcRequestBuilders.get("/movie?page=0")
@@ -101,7 +107,10 @@ public class MovieTest {
                 .andExpect(jsonPath("total_results").isNumber())
                 .andExpect(jsonPath("total_pages").isNotEmpty())
                 .andExpect(jsonPath("total_pages").isNumber());
+    }
 
+    @Test
+    public void testGetListNullPage() throws Exception {
         // positive check: correct results null page
         mvc
                 .perform(MockMvcRequestBuilders.get("/movie?page=")
@@ -117,7 +126,10 @@ public class MovieTest {
                 .andExpect(jsonPath("total_results").isNumber())
                 .andExpect(jsonPath("total_pages").isNotEmpty())
                 .andExpect(jsonPath("total_pages").isNumber());
+    }
 
+    @Test
+    public void testGetListPageString() throws Exception {
         // negative check: page is a string
         mvc
                 .perform(MockMvcRequestBuilders.get("/movie?page=somestring")
@@ -156,14 +168,20 @@ public class MovieTest {
                 .andExpect(jsonPath("overview").isString())
                 .andExpect(jsonPath("vote_average").isNotEmpty())
                 .andExpect(jsonPath("vote_average").isNumber());
+    }
 
+    @Test
+    public void testGetMinusOne() throws Exception {
         // negative check: id does not exist
         mvc
                 .perform(MockMvcRequestBuilders.get("/movie/-1")
                         .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isNotFound());
+    }
 
+    @Test
+    public void testGetOneString() throws Exception {
         // negative check: id is a string
         mvc
                 .perform(MockMvcRequestBuilders.get("/movie/somestring")
@@ -216,8 +234,7 @@ public class MovieTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("status").exists())
-                .andExpect(jsonPath("status").value("request accepted"))
-                .andExpect(jsonPath("error").doesNotExist());
+                .andExpect(jsonPath("status").value("request accepted"));
 
         Thread.sleep(2000);
 
@@ -227,8 +244,7 @@ public class MovieTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("status").exists())
-                .andExpect(jsonPath("status").value("request in progress"))
-                .andExpect(jsonPath("error").doesNotExist());
+                .andExpect(jsonPath("status").value("request in progress"));
 
         Thread.sleep(5000);
 
@@ -238,8 +254,7 @@ public class MovieTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("status").exists())
-                .andExpect(jsonPath("status").value("request completed"))
-                .andExpect(jsonPath("error").doesNotExist());
+                .andExpect(jsonPath("status").value("request completed"));
     }
 
 }

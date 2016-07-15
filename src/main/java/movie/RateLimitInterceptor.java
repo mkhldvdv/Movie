@@ -24,7 +24,7 @@ public class RateLimitInterceptor extends HandlerInterceptorAdapter {
     @Value("${movie.requestRate}")
     private Integer requestRate;
 
-    private final Map<String, Integer> rateCache = new HashMap<>();
+    private volatile Map<String, Integer> rateCache = new HashMap<>();
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -44,7 +44,9 @@ public class RateLimitInterceptor extends HandlerInterceptorAdapter {
         if (currentRate == null) {
             currentRate = 0;
         }
-        rateCache.put(addr, ++currentRate);
+        synchronized (rateCache) {
+            rateCache.put(addr, ++currentRate);
+        }
 
         return currentRate;
     }

@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -30,6 +31,9 @@ public class MovieTestError {
 
     private MockMvc mvc;
 
+    @Value("${movie.requestRate}")
+    private Integer requestRate;
+
     @Autowired
     private WebApplicationContext webApplicationContext;
 
@@ -39,24 +43,18 @@ public class MovieTestError {
     }
 
     @Test
-    public void testGetRatingError() throws Exception {
+    public void testGet429Error() throws Exception {
         // positive check: correct results
-        mvc
-                .perform(MockMvcRequestBuilders.get("/rating/28")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("status").exists())
-                .andExpect(jsonPath("status").value("request accepted"))
-                .andExpect(jsonPath("error").doesNotExist());
-
-        Thread.sleep(10000);
+        while (--requestRate > 0) {
+            mvc
+                    .perform(MockMvcRequestBuilders.get("/movie/550")
+                            .accept(MediaType.APPLICATION_JSON));
+        }
 
         mvc
-                .perform(MockMvcRequestBuilders.get("/rating/28")
+                .perform(MockMvcRequestBuilders.get("/movie/550")
                         .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("error").exists());
+                .andExpect(status().is4xxClientError());
     }
 }

@@ -9,5 +9,5 @@ movie:
 ---
 spring:
     profiles: test
-themoviedb:
-    pageLimit: 100
+movie:
+    requestRate: 45
