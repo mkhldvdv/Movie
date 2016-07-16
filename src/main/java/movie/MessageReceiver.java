@@ -38,11 +38,21 @@ public class MessageReceiver {
     public void getRating(Long id) {
         log.info("Message received: " + id);
 
+        // check if it's already called for defined jenre
+        synchronized (rate.getRatingProccessing()) {
+            if (rate.getRatingProccessing().get(id) == null) {
+                rate.getRatingProccessing().put(id, 0);
+            } else {
+                return;
+            }
+        }
+
         StringBuilder url = new StringBuilder()
                 .append(accessUri)
                 .append("/genre/")
                 .append(id)
                 .append("/movies?api_key=").append(apiKey);
+
         RestTemplate restTemplate = new RestTemplate();
         Movies movies;
         try {
