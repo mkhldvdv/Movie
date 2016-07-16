@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.annotation.JmsListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -80,5 +81,10 @@ public class MessageReceiver {
         rate.getRatingProccessed().put(id, Float.valueOf(new DecimalFormat("##,##").format(rating / totalResults)));
         // remove from proccessing
         rate.getRatingProccessing().remove(id);
+    }
+
+    @Scheduled(cron = "0 0 * * * *")
+    private void clearCache() {
+        rate.getRatingProccessed().clear();
     }
 }
