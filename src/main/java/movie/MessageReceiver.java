@@ -35,12 +35,7 @@ public class MessageReceiver {
     private Integer pageLimit;
 
     @JmsListener(destination = "rating")
-    public synchronized void getRating(Long id) throws RestClientException {
-        // check if it was already called for the defined jenre
-        if (rate.getRatingProccessed().get(id) != null) {
-            return;
-        }
-
+    public void getRating(Long id) {
         log.info("Message received: " + id);
 
         StringBuilder url = new StringBuilder()
