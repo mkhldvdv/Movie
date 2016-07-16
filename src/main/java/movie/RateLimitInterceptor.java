@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by mikhail.davydov on 2016/7/14.
@@ -24,7 +26,7 @@ public class RateLimitInterceptor extends HandlerInterceptorAdapter {
     @Value("${movie.requestRate}")
     private Integer requestRate;
 
-    private volatile Map<String, Integer> rateCache = new HashMap<>();
+    private final Map<String, Integer> rateCache = new HashMap<>();
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -44,9 +46,11 @@ public class RateLimitInterceptor extends HandlerInterceptorAdapter {
         if (currentRate == null) {
             currentRate = 0;
         }
-        synchronized (rateCache) {
-            rateCache.put(addr, ++currentRate);
-        }
+
+        Lock lock = new ReentrantLock();
+        lock.lock();
+        rateCache.put(addr, ++currentRate);
+        lock.unlock();
 
         return currentRate;
     }

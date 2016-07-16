@@ -11,6 +11,8 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.text.DecimalFormat;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by mikhail.davydov on 2016/7/12.
@@ -31,21 +33,20 @@ public class MessageReceiver {
     @Value("${themoviedb.apiKey}")
     private String apiKey;
 
-    @Value("${themoviedb.pageLimit}")
-    private Integer pageLimit;
-
     @JmsListener(destination = "rating")
-    public void getRating(Long id) {
+    public void getRating(Long id) throws InterruptedException {
         log.info("Message received: " + id);
 
         // check if it's already called for defined jenre
-        synchronized (rate.getRatingProccessing()) {
-            if (rate.getRatingProccessing().get(id) == null) {
-                rate.getRatingProccessing().put(id, 0);
-            } else {
-                return;
-            }
+        Lock lock = new ReentrantLock();
+        lock.lock();
+        if (rate.getRatingProccessing().get(id) == null) {
+            rate.getRatingProccessing().put(id, 0);
+        } else {
+            lock.unlock();
+            return;
         }
+        lock.unlock();
 
         StringBuilder url = new StringBuilder()
                 .append(accessUri)
@@ -58,28 +59,24 @@ public class MessageReceiver {
         try {
             movies = restTemplate.getForObject(url.toString(), Movies.class);
         } catch (RestClientException e) {
-            rate.getRatingErrors().put(id, e.getMessage());
-            return;
+            Thread.sleep(10000);
+            movies = restTemplate.getForObject(url.toString(), Movies.class);
         }
         int page = movies.getPage();
-        int totalPages = pageLimit;
-//        int totalResults = movies.getTotalResults();
-        int totalResults = INIT_VALUE;
+        int totalPages = movies.getTotalPages();
+        int totalResults = movies.getTotalResults();
         float rating = INIT_VALUE;
         // proccessing
         while (page < totalPages) {
             rate.getRatingProccessing().put(id, page * 100 / totalPages);
             rating += movies.getMovies().stream().mapToDouble(Movie::getVoteAverage).sum();
-            // because of the request limit per second
-            totalResults += movies.getMovies().stream().count();
-            //
             page++;
             url.append("&page=").append(page);
             try {
                 movies = restTemplate.getForObject(url.toString(), Movies.class);
             } catch (RestClientException e) {
-                rate.getRatingErrors().put(id, e.getMessage());
-                return;
+                Thread.sleep(10000);
+                movies = restTemplate.getForObject(url.toString(), Movies.class);
             }
         }
         // add processed results

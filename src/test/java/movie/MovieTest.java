@@ -236,7 +236,7 @@ public class MovieTest {
                 .andExpect(jsonPath("status").exists())
                 .andExpect(jsonPath("status").value("request accepted"));
 
-        Thread.sleep(2000);
+        Thread.sleep(60000);
 
         mvc
                 .perform(MockMvcRequestBuilders.get("/rating/28")
@@ -246,7 +246,7 @@ public class MovieTest {
                 .andExpect(jsonPath("status").exists())
                 .andExpect(jsonPath("status").value("request in progress"));
 
-        Thread.sleep(5000);
+        Thread.sleep(2000000);
 
         mvc
                 .perform(MockMvcRequestBuilders.get("/rating/28")
